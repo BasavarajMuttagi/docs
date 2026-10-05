@@ -1,11 +1,11 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mintlify Starter Kit",
+  "name": "React Interview & Core Architecture Guide",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#19e76e",
+    "light": "#f5f8f4",
+    "dark": "#0e0e0e"
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -16,19 +16,72 @@
           "index",
           "quickstart"
         ]
+      },
+      {
+        "group": "01. Describing the UI & Component Trees",
+        "pages": [
+          "01-describing-the-ui/01-intro-to-rerenders",
+          "01-describing-the-ui/02-elements-children-as-props",
+          "01-describing-the-ui/03-elements-as-props-configuration"
+        ]
+      },
+      {
+        "group": "02. Adding Interactivity & State Snapshots",
+        "pages": [
+          "02-adding-interactivity/02-state-as-a-snapshot",
+          "02-adding-interactivity/04-queueing-state-updates"
+        ]
+      },
+      {
+        "group": "03. Managing State & Reconciliation",
+        "pages": [
+          "03-managing-state/02-diffing-and-the-mysterious-bug",
+          "03-managing-state/03-reconciliation-and-keys",
+          "03-managing-state/02-context-and-performance"
+        ]
+      },
+      {
+        "group": "04. Escape Hatches (Refs, Effects & Layout)",
+        "pages": [
+          "04-escape-hatches/03-closures-in-react-and-stale-closures",
+          "04-escape-hatches/03-you-might-not-need-an-effect",
+          "04-escape-hatches/01-escaping-flicker-with-uselayouteffect"
+        ]
+      },
+      {
+        "group": "05. Advanced Performance & Memoization",
+        "pages": [
+          "05-advanced-performance/02-antipattern-memoizing-props",
+          "05-advanced-performance/01-render-props-pattern"
+        ]
+      },
+      {
+        "group": "06. Modern React 19 & Async Data Flow",
+        "pages": [
+          "06-modern-react-19/02-race-conditions-and-abortcontroller",
+          "06-modern-react-19/03-react-19-actions-and-use-api",
+          "06-modern-react-19/01-universal-error-boundaries"
+        ]
+      },
+      {
+        "group": "07. Pro Optimization & Custom Hooks",
+        "pages": [
+          "07-pro-optimization/03-bundle-size-and-tree-shaking",
+          "07-pro-optimization/04-production-custom-hooks"
+        ]
       }
     ],
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
+          "anchor": "Official React Docs",
+          "href": "https://react.dev",
+          "icon": "atom"
         },
         {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "Advanced React (PDF)",
+          "href": "/reference.pdf",
+          "icon": "book-open-cover"
         }
       ]
     }
@@ -36,19 +89,6 @@
   "logo": {
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:support@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.mintlify.com"
-    }
   },
   "contextual": {
     "options": [
@@ -64,9 +104,7 @@
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "github": "https://github.com"
     }
   }
 }

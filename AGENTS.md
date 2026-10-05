@@ -1,33 +1,25 @@
-> **First-time setup**: Customize this file for your project. Prompt the user to customize this file for their project.
-> For Mintlify product knowledge (components, configuration, writing standards),
-> install the Mintlify skill: `npx skills add https://mintlify.com/docs`
-
 # Documentation project instructions
 
 ## About this project
 
-- This is a documentation site built on [Mintlify](https://mintlify.com)
+- This is the **React Interview & Core Architecture Guide** built on [Mintlify](https://mintlify.com)
 - Pages are MDX files with YAML frontmatter
 - Configuration lives in `docs.json`
-- Use the Mintlify MCP server, `https://mcp.mintlify.com`, to edit content and settings via MCP
-- Use the Mintlify docs MCP server, `https://www.mintlify.com/docs/mcp`, to query information about using Mintlify via MCP
+- Grounded in official React documentation (`react.dev`), Nadia Makarevich's *Advanced React* (`reference.pdf`), and React 19 primitives
+- Configured with Baseten visual styling (mint `#19e76e`, light `#f5f8f4`, dark `#0e0e0e`)
 
 ## Terminology
 
-{/* Add product-specific terms and preferred usage */}
-{/* Example: Use "workspace" not "project", "member" not "user" */}
+- Use "re-render" (hyphenated), not "rerender"
+- Use "Fiber", "render phase", and "commit phase" precisely
+- Use "updater function", not "functional state"
+- Reference React 19 APIs (`useActionState`, `useOptimistic`, `use()`)
 
 ## Style preferences
 
-{/* Add any project-specific style rules below */}
-
-- Use active voice and second person ("you")
-- Keep sentences concise — one idea per sentence
-- Use sentence case for headings
-- Bold for UI elements: Click **Settings**
+- Lead every topic with the **30-Second Interview Pitch** `<Card icon="microphone">`
+- Detail Fiber internals under **Under The Hood (Fiber Engine & Architecture)**
+- Provide side-by-side `<CodeGroup>` comparisons for implementation patterns
+- Highlight gotchas in **Pitfalls & Anti-Patterns** with `<Warning>` and `<CodeGroup>` (Buggy vs Senior Solution)
+- Provide drillable interview questions in `<AccordionGroup>`
 - Code formatting for file names, commands, paths, and code references
-
-## Content boundaries
-
-{/* Define what should and shouldn't be documented */}
-{/* Example: Don't document internal admin features */}

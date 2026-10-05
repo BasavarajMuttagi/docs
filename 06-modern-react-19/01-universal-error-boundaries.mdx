@@ -1,0 +1,314 @@
+---
+title: "Universal Error Handling & Error Boundaries"
+description: "Why unhandled render errors crash the whole tree, why try/catch in render fails, and catching async errors."
+sidebarTitle: "Universal Error Handling"
+---
+
+<div className="flex gap-2 mb-4">
+  <Badge color="green" size="sm">Resilience Architecture</Badge>
+  <Badge color="orange" size="sm">Async Error Catching</Badge>
+  <Badge color="blue" size="sm">React 19 Boundaries</Badge>
+</div>
+
+<Card title="30-Second Senior Interview Pitch" icon="microphone">
+  In React 16+, an uncaught JavaScript error thrown during rendering, lifecycle methods, or constructors will completely unmount the entire React component tree, leaving the user with a blank white screen. Wrapping JSX in a standard JavaScript `try/catch` block does NOT work because JSX is declarative—React calls the child component functions later during Fiber reconciliation, outside your try/catch! The only way to intercept render errors is with an `ErrorBoundary` class component (`static getDerivedStateFromError`). Crucially, Error Boundaries cannot natively catch errors in event handlers or async code (fetch/setTimeout); to send async errors to an Error Boundary, you must re-throw them inside a state updater callback.
+</Card>
+
+## Under The Hood (Fiber Engine & Architecture)
+
+```mermaid
+flowchart TD
+    subgraph UI ["Component Hierarchy"]
+      EB["ErrorBoundary (Catches Render Phase Errors)"]
+      EB --> Child["Child Component Tree"]
+      Child -->|throws in render| EB
+      Child -.->|async error (fetch, event)| CatchHook["useAsyncError() / showBoundary()"]
+      CatchHook -->|re-throws into render cycle| EB
+    end
+    EB --> Fallback["Renders graceful Fallback UI &amp; logs telemetry"]
+```
+
+- The Unmount Disaster: React deliberately unmounts the tree on uncaught render errors because leaving a corrupted UI in place is worse than a blank screen (e.g. paying the wrong recipient or corrupting form data).
+- Why `try { return ``; } catch` fails: Writing `<Child />` only returns a React element object `{ type: Child }`. The actual invocation `Child()` happens later during the React reconciliation work loop. The try/catch block has already finished executing before the crash occurs!
+- The Two Error Boundary Methods: 1. `static getDerivedStateFromError(error)`: Pure method called during the render phase to synchronously render fallback UI. 2. `componentDidCatch(error, info)`: Side-effect method called during commit phase to log errors to Sentry or Datadog.
+- The 4 Things Error Boundaries CANNOT Catch: 1) Event handlers (use normal try/catch there), 2) Asynchronous code (setTimeout, fetch promises), 3) Server-Side Rendering (SSR), 4) Errors thrown inside the Error Boundary itself.
+
+## Implementation Patterns & Approaches
+
+<CodeGroup>
+```tsx Pattern A: Classical React ErrorBoundary Class
+class ErrorBoundary extends React.Component {
+  state = { hasError: false };
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    logErrorToService(error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <h1>Something went wrong.</h1>;
+    }
+    return this.props.children;
+  }
+}
+```
+
+```tsx Pattern B: Propagating Async Errors into Boundaries
+function useAsyncError() {
+  const [, setError] = useState();
+  return useCallback((e: Error) => {
+    setError(() => {
+      throw e; // Caught by Error Boundary!
+    });
+  }, []);
+}
+
+// In component:
+const throwAsyncError = useAsyncError();
+fetch('/api').catch(throwAsyncError);
+```
+
+</CodeGroup>
+
+### Pattern A: Classical React ErrorBoundary Class (Official React API)
+
+Implement `getDerivedStateFromError` and `componentDidCatch` in a class component (React has no hook equivalent for Error Boundaries).
+
+**Advantages & When to Use:**
+- Zero external dependencies
+- Standard React production pattern
+
+**Tradeoffs & Watch Out For:**
+- Must be written as a class component
+
+### Pattern B: Propagating Async Errors into Boundaries (Senior Interview Secret)
+
+Throwing inside a `setState` updater callback forces React to re-throw the error during the next render phase, where the nearest Error Boundary catches it!
+
+**Advantages & When to Use:**
+- Allows async errors (fetch, timers) to trigger unified Error Boundary UI
+- Eliminates duplicate error banner components
+
+**Tradeoffs & Watch Out For:**
+- Requires understanding of React's state updater throw mechanics
+
+## Pitfalls & Anti-Patterns
+
+### ⚠️ Anti-Pattern: Attempting to Use try/catch Around Child JSX
+
+<Warning>
+  **Why It Breaks:** JSX does not execute Child. It only returns `&#123; type: ChildWithHeavyCalculations, props: &#123;&#125; &#125;`. React calls `ChildWithHeavyCalculations()` minutes later in its own call stack. The catch block will NEVER execute!
+</Warning>
+
+<CodeGroup>
+```tsx Buggy Code
+function Parent() {
+  try {
+    // ❌ USELESS: Child() has not run yet!
+    return <ChildWithHeavyCalculations />;
+  } catch (err) {
+    return <div>Caught an error!</div>;
+  }
+}
+```
+
+```tsx Senior Solution
+// ✅ Wrap with an ErrorBoundary component
+function Parent() {
+  return (
+    <ErrorBoundary fallback={<div>Caught an error!</div>}>
+      <ChildWithHeavyCalculations />
+    </ErrorBoundary>
+  );
+}
+```
+</CodeGroup>
+
+<Tip>
+  **Senior Explanation:** React elements are descriptions, not executions. Only Error Boundary components intercept render errors thrown during Fiber reconciliation.
+</Tip>
+
+## Senior Interview Q&A
+
+<AccordionGroup>
+  <Accordion title="Q: Why does wrapping JSX in a standard JavaScript try/catch fail to catch errors in child components? (Common Level)">
+    Because JSX transpiles to `React.createElement()`, which simply creates an immutable object describing the UI. The actual execution of the child component function happens later inside React's internal reconciliation loop, which is outside the scope of your `try/catch` block. By the time the child throws, the try/catch has already finished executing.
+  </Accordion>
+  <Accordion title="Q: What are the 4 scenarios where an Error Boundary will NOT catch an error, and how do you handle them? (Senior Level)">
+    Error Boundaries do not catch errors in: 1) Event handlers (handle with standard try/catch inside the handler), 2) Asynchronous code such as `setTimeout` or `Promise.then` (propagate by throwing inside a `setState` updater callback), 3) Server-Side Rendering (handle on the server process), and 4) Errors thrown inside the Error Boundary itself (caught by an ancestor Error Boundary higher up).
+  </Accordion>
+</AccordionGroup>
+
+## Complete Playground Component
+
+<CodeGroup>
+```tsx 01-universal-error-boundaries.tsx
+import React, { Component, useState } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
+import { RenderCounter } from '../../../components/ui/RenderCounter';
+import { ShieldAlert, RefreshCw, AlertTriangle, Bug } from 'lucide-react';
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+  fallbackTitle?: string;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+// Canonical React Error Boundary (Class Component)
+class UniversalErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
+  public override state: ErrorBoundaryState = {
+    hasError: false,
+    error: null,
+  };
+
+  public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    // Update state so the next render will show the fallback UI
+    return { hasError: true, error };
+  }
+
+  public override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  }
+
+  public reset = () => {
+    this.setState({ hasError: false, error: null });
+  };
+
+  public override render() {
+    if (this.state.hasError) {
+      return (
+        <div className="border border-[#C8102E] bg-[#C8102E]/10 p-5 space-y-3">
+          <div className="flex items-center gap-2 text-[#C8102E]">
+            <ShieldAlert className="w-5 h-5 shrink-0" />
+            <h4 className="text-xs font-mono uppercase font-semibold">
+              {this.props.fallbackTitle || 'Boundary Caught Render Crash'}
+            </h4>
+          </div>
+          <p className="text-xs text-stone-700 dark:text-stone-300 font-mono">
+            {this.state.error?.message || 'Unknown render exception occurred.'}
+          </p>
+          <button
+            onClick={this.reset}
+            className="px-3 py-1.5 bg-[#C8102E] text-stone-50 text-xs font-mono flex items-center gap-1.5"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Recover & Reset Boundary</span>
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Buggy child that throws during render
+const BuggyRenderComponent: React.FC<{ shouldCrash: boolean }> = ({
+  shouldCrash,
+}) => {
+  if (shouldCrash) {
+    throw new Error(
+      'Fatal render exception: Simulated unhandled crash in component subtree!'
+    );
+  }
+
+  return (
+    <div className="p-4 border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950 flex items-center justify-between">
+      <span className="text-xs text-stone-700 dark:text-stone-300">
+        Healthy Child Subtree (Operating normally)
+      </span>
+      <RenderCounter name="HealthyChild" />
+    </div>
+  );
+};
+
+// Component demonstrating how to propagate async errors to an Error Boundary
+const AsyncErrorSimulator: React.FC = () => {
+  const [, setAsyncError] = useState();
+
+  const triggerAsyncCrash = () => {
+    setTimeout(() => {
+      // ⚠️ Native Error Boundaries do NOT catch setTimeout or fetch errors!
+      // To propagate an async error to the nearest Error Boundary:
+      // Throw inside a setState updater function!
+      setAsyncError(() => {
+        throw new Error(
+          'Async timer error caught and propagated to ErrorBoundary!'
+        );
+      });
+    }, 400);
+  };
+
+  return (
+    <button
+      onClick={triggerAsyncCrash}
+      className="px-3 py-1.5 border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-mono flex items-center gap-1.5"
+    >
+      <Bug className="w-3.5 h-3.5" />
+      <span>Trigger Async Error (Propagated to Boundary)</span>
+    </button>
+  );
+};
+
+export default function UniversalErrorBoundariesDemo() {
+  const [shouldCrash, setShouldCrash] = useState(false);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between pb-3 border-b border-stone-200 dark:border-stone-800">
+        <div>
+          <h4 className="text-xs font-mono uppercase text-stone-500">
+            Universal Error Boundary Playground
+          </h4>
+          <p className="text-xs text-stone-400 mt-1">
+            ErrorBoundary catches crashes in its children, preventing the entire
+            page from unmounting.
+          </p>
+        </div>
+        <RenderCounter name="PageContainer" />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          onClick={() => setShouldCrash(true)}
+          className="px-3 py-1.5 bg-[#C8102E] text-stone-50 text-xs font-mono font-medium flex items-center gap-1.5"
+        >
+          <AlertTriangle className="w-3.5 h-3.5" />
+          <span>Trigger Synchronous Render Crash</span>
+        </button>
+        <AsyncErrorSimulator />
+        {shouldCrash && (
+          <button
+            onClick={() => setShouldCrash(false)}
+            className="px-3 py-1.5 border border-stone-300 dark:border-stone-700 text-xs font-mono"
+          >
+            Clear Render Crash Flag
+          </button>
+        )}
+      </div>
+
+      {/* Sandboxed Subtree wrapped in Error Boundary */}
+      <UniversalErrorBoundary fallbackTitle="Widget Error Boundary Container">
+        <BuggyRenderComponent shouldCrash={shouldCrash} />
+      </UniversalErrorBoundary>
+
+      <div className="p-4 border border-stone-200 dark:border-stone-800 bg-stone-100/50 dark:bg-stone-900/50 text-xs text-stone-500">
+        Notice: Even when the widget above crashes, the surrounding dashboard
+        (and this text) remains fully interactive and responsive!
+      </div>
+    </div>
+  );
+}
+```
+</CodeGroup>

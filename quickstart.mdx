@@ -1,47 +1,39 @@
 ---
-title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+title: "Interview Prep Playbook"
+description: "How to use this guide to pass senior frontend and React engineering interviews."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
+Preparing for senior React interviews requires more than memorizing hook signatures. Top engineering teams assess:
+1. **Reconciliation & Diffing Mental Models**: Can you explain how Fiber processes component trees and detects changes?
+2. **Re-render Optimization**: Can you stop unnecessary re-renders using composition without defaulting blindly to `useMemo` and `useCallback`?
+3. **Async Race Conditions & Edge Cases**: Can you prevent stale UI states, unhandled errors, and out-of-order responses?
+4. **React 19 Primitives**: Are you up to speed on Actions, optimistic mutations, and modern server/client paradigms?
 
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
-
-## Prerequisites
-
-Before you begin, you must have:
-
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
-
-## Get started
+## Recommended 3-Step Study Plan
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
-
-    ```bash
-    npm install your-package
-    ```
+  <Step title="1. Internalize the 30-Second Elevator Pitch">
+    Every topic starts with a concise senior summary. Practice stating this out loud. Interviewers ask broad questions like *"How do re-renders work?"* or *"When would you use useLayoutEffect?"*—delivering a razor-sharp opening sentence establishes seniority immediately.
   </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
 
-    ```bash
-    your-cli init
-    ```
+  <Step title="2. Review Pitfalls & The Anti-Pattern Spotlights">
+    Interviewers frequently present buggy code snippets and ask: *"What is wrong with this component?"*
+    Review the **Pitfalls & Anti-Patterns** section on each page to instantly spot bugs like:
+    - Component definitions inside render functions
+    - Mutating state variables expecting synchronous updates
+    - Derived state placed in `useEffect` instead of computed during render
+    - Missing cleanups on timers and AbortControllers
   </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
 
-    ```bash
-    your-cli start
-    ```
+  <Step title="3. Drill the Senior Interview Q&A Accordions">
+    Each page contains real-world interview questions categorized by difficulty (`Common`, `Tricky`, `Senior`). Test yourself before expanding each accordion to evaluate your depth of understanding.
   </Step>
 </Steps>
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+## Deep Reading Reference
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
+For additional architectural depth and performance investigations, refer to Nadia Makarevich's **[Advanced React (PDF)](/reference.pdf)** included directly in the root of this project.
+
+<Tip>
+  To preview this documentation locally at any time, run `npx mintlify dev` from your terminal.
 </Tip>
